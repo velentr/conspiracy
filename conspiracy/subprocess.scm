@@ -5,6 +5,7 @@
 (define-module (conspiracy subprocess)
   #:use-module (srfi srfi-9)
   #:export (call
+            check-call
             completed-process?
             completed-process->args
             completed-process->returncode
@@ -35,3 +36,15 @@ then return a <COMPLETED-PROCESS> representing the result of its execution."
   "Run the command given by ARGS in another process, wait for it to complete,
 then return the returncode that resulted from its execution."
   (completed-process->returncode (apply run args)))
+
+(define* (check-call . args)
+  "Run the command given by ARGS in another process, wait for it to complete,
+then check its return code. Raise an error if the child process exited with a
+failure; otherwise, return #t."
+  (let* ((result (apply run args))
+         (returncode (completed-process->returncode result)))
+    (if (= 0 returncode)
+        #t
+        (error "called process returned non-zero exit status"
+               returncode
+               (completed-process->args result)))))
