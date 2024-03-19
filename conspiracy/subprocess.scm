@@ -3,6 +3,7 @@
 ;;; SPDX-License-Identifier: GPL-3.0-only
 
 (define-module (conspiracy subprocess)
+  #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-9)
   #:export (call
             check-call
@@ -12,27 +13,45 @@
             run))
 
 (define-record-type <completed-process>
-  (make-completed-process args returncode)
+  (make-completed-process args returncode stdout)
   completed-process?
   ;; The argument list that was used to invoke the child process.
   (args completed-process->args)
   ;; The exit status of the child process returned by WAITPID. This value can be
   ;; handled with STATUS:exit-val and related functions. Typically, a return
   ;; code of 0 indicates success and any other code indicates failure.
-  (returncode completed-process->returncode))
+  (returncode completed-process->returncode)
+  ;; The child process's stdout as a string, or #f if stdout was not captured.
+  (stdout completed-process->stdout))
 
-(define* (completed-process* #:key args returncode)
-  "Make a new <COMPLETED-PROCESS> with the given ARGS and RETURNCODE."
-  (make-completed-process args returncode))
+(define* (completed-process* #:key args returncode stdout)
+  "Make a new <COMPLETED-PROCESS> with the given ARGS, RETURNCODE, and STDOUT."
+  (make-completed-process args returncode stdout))
 
-(define* (run args #:key (check #f))
+(define* (run args #:key (check #f) (stdout #f))
   "Run the command given by ARGS in another process, wait for it to complete,
-then return a <COMPLETED-PROCESS> representing the result of its execution."
-  (let ((returncode (apply system* args)))
+then return a <COMPLETED-PROCESS> representing the result of its execution. If
+STDOUT is 'CAPTURE, capture the process's stdout to a string."
+  (let* ((stdout/r+w (if (eq? stdout 'capture)
+                         (pipe)
+                         (cons #f #f)))
+         (stdout/r (car stdout/r+w))
+         (stdout/w (cdr stdout/r+w))
+         (pid (spawn
+               (car args)
+               args
+               #:output (or stdout/w (current-output-port))))
+         (_ (if stdout/w
+                (close-port stdout/w)))
+         (stdout (and stdout/r (get-string-all stdout/r)))
+         (_ (if stdout/r
+                (close-port stdout/r)))
+         (returncode (cdr (waitpid pid))))
     (if (or (not check) (= 0 returncode))
         (completed-process*
          #:args args
-         #:returncode returncode)
+         #:returncode returncode
+         #:stdout stdout)
         (error "called process returned non-zero exit status"
                returncode
                args))))
