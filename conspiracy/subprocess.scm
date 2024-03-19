@@ -25,26 +25,26 @@
   "Make a new <COMPLETED-PROCESS> with the given ARGS and RETURNCODE."
   (make-completed-process args returncode))
 
-(define (run args)
+(define* (run args #:key (check #f))
   "Run the command given by ARGS in another process, wait for it to complete,
 then return a <COMPLETED-PROCESS> representing the result of its execution."
-  (completed-process*
-   #:args args
-   #:returncode (apply system* args)))
+  (let ((returncode (apply system* args)))
+    (if (or (not check) (= 0 returncode))
+        (completed-process*
+         #:args args
+         #:returncode returncode)
+        (error "called process returned non-zero exit status"
+               returncode
+               args))))
 
 (define* (call . args)
   "Run the command given by ARGS in another process, wait for it to complete,
 then return the returncode that resulted from its execution."
   (completed-process->returncode (apply run args)))
 
-(define* (check-call . args)
+(define* (check-call args . rest)
   "Run the command given by ARGS in another process, wait for it to complete,
 then check its return code. Raise an error if the child process exited with a
 failure; otherwise, return #t."
-  (let* ((result (apply run args))
-         (returncode (completed-process->returncode result)))
-    (if (= 0 returncode)
-        #t
-        (error "called process returned non-zero exit status"
-               returncode
-               (completed-process->args result)))))
+  (apply call (cons* args #:check #t rest))
+  #t)
