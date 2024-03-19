@@ -7,6 +7,7 @@
   #:use-module (srfi srfi-9)
   #:export (call
             check-call
+            check-output
             completed-process?
             completed-process->args
             completed-process->returncode
@@ -67,3 +68,10 @@ then check its return code. Raise an error if the child process exited with a
 failure; otherwise, return #t."
   (apply call (cons* args #:check #t rest))
   #t)
+
+(define* (check-output args . rest)
+  "Run the command given by ARGS in another process, wait for it to complete,
+then check its return code. Raise an error if the child process exited with a
+failure; otherwise, return the child process's stdout as a string."
+  (completed-process->stdout
+   (apply run (cons* args #:check #t #:stdout 'capture rest))))
