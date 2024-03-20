@@ -32,11 +32,27 @@
   "Make a new <COMPLETED-PROCESS> with the given ARGS, RETURNCODE, and STDOUT."
   (make-completed-process args returncode stdout))
 
-(define* (run args #:key (check #f) (stdout #f))
+(define (normalize-environment env-vars)
+  "Normalize the environment variables in ENV-VARS. Strings are passed through
+and pairs are formatted into a KEY=VALUE string. For example, the result of
+GET-ENVIRONMENT-VARIABLES is normalized to be identical to the result of
+ENVIRON."
+  (map
+   (lambda (var)
+     (cond
+      ((string? var)
+       var)
+      ((pair? var)
+       (format #f "~a=~a" (car var) (cdr var)))))
+   env-vars))
+
+(define* (run args #:key (check #f) (stdout #f) (environment (environ)))
   "Run the command given by ARGS in another process, wait for it to complete,
 then return a <COMPLETED-PROCESS> representing the result of its execution. If
-STDOUT is 'CAPTURE, capture the process's stdout to a string."
-  (let* ((stdout/r+w (if (eq? stdout 'capture)
+STDOUT is 'CAPTURE, capture the process's stdout to a string. Run the child
+process with environment variables given by ENVIRONMENT."
+  (let* ((environment (normalize-environment environment))
+         (stdout/r+w (if (eq? stdout 'capture)
                          (pipe)
                          (cons #f #f)))
          (stdout/r (car stdout/r+w))
@@ -44,7 +60,8 @@ STDOUT is 'CAPTURE, capture the process's stdout to a string."
          (pid (spawn
                (car args)
                args
-               #:output (or stdout/w (current-output-port))))
+               #:output (or stdout/w (current-output-port))
+               #:environment environment))
          (_ (if stdout/w
                 (close-port stdout/w)))
          (stdout (and stdout/r (get-string-all stdout/r)))
