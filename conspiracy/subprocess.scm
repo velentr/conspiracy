@@ -6,8 +6,11 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-9)
   #:export (call
+            call*
             check-call
+            check-call*
             check-output
+            check-output*
             completed-process?
             completed-process->args
             completed-process->returncode
@@ -62,6 +65,11 @@ STDOUT is 'CAPTURE, capture the process's stdout to a string."
 then return the returncode that resulted from its execution."
   (completed-process->returncode (apply run args)))
 
+(define* (call* . args)
+  "Like CALL, but passes default arguments to RUN and doesn't require passing
+ARGS as a list."
+  (call args))
+
 (define* (check-call args . rest)
   "Run the command given by ARGS in another process, wait for it to complete,
 then check its return code. Raise an error if the child process exited with a
@@ -69,9 +77,19 @@ failure; otherwise, return #t."
   (apply call (cons* args #:check #t rest))
   #t)
 
+(define* (check-call* . args)
+  "Like CHECK-CALL, but passes default arguments to RUN and doesn't require
+passing ARGS as a list."
+  (check-call args))
+
 (define* (check-output args . rest)
   "Run the command given by ARGS in another process, wait for it to complete,
 then check its return code. Raise an error if the child process exited with a
 failure; otherwise, return the child process's stdout as a string."
   (completed-process->stdout
    (apply run (cons* args #:check #t #:stdout 'capture rest))))
+
+(define* (check-output* . args)
+  "Like CHECK-OUTPUT, but passes default arguments to RUN and doesn't require
+passing ARGS as a list."
+  (check-output args))
