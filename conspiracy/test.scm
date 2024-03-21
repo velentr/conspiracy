@@ -4,7 +4,8 @@
 
 (define-module (conspiracy test)
   #:use-module (srfi srfi-9)
-  #:export (define-test
+  #:export (assert
+            define-test
             run-test
             test?))
 
@@ -39,3 +40,8 @@ if it fails."
        (thunk)
        'success)
      #:unwind? #t)))
+
+(define-syntax-rule (assert expr)
+  "Raise an error if EXPR is #f."
+  (if (not expr)
+      (error "assertion failed" (quote expr))))
