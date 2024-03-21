@@ -6,6 +6,7 @@
   #:use-module (srfi srfi-9)
   #:export (assert
             define-test
+            failure?
             run-test
             test?))
 
@@ -45,3 +46,8 @@ if it fails."
   "Raise an error if EXPR is #f."
   (if (not expr)
       (error "assertion failed" (quote expr))))
+
+(define (failure? test-result)
+  "Is TEST-RESULT a test failure?"
+  (and (pair? test-result)
+       (eq? (car test-result) 'failure)))
