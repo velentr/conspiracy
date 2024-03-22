@@ -1,0 +1,89 @@
+#!/usr/bin/env guile
+!#
+
+;;; SPDX-FileCopyrightText: 2024 Brian Kubisiak <brian@kubisiak.com>
+;;;
+;;; SPDX-License-Identifier: GPL-3.0-only
+
+(use-modules (ice-9 exceptions)
+             (ice-9 ftw)
+             (conspiracy test))
+
+(define (path->module path)
+  "Convert PATH to a module, or #f if an error occurs."
+  (resolve-module
+   (map
+    string->symbol
+    (string-split
+     ;; drop the .scm suffix
+     (string-drop-right path 4)
+     #\/))
+   #:ensure #f))
+
+(define (module->tests mod)
+  "Get all tests in MOD."
+  (hash-fold
+   (lambda (key var result)
+     (let ((val (variable-ref var)))
+       (if (test? val)
+           (cons val result)
+           result)))
+   '()
+   (module-obarray mod)))
+
+(define (find-tests directory)
+  "Find all the tests in the file-system tree DIRECTORY."
+  (define (enter? _path _stat _result)
+    #t)
+  (define (leaf path _stat result)
+    (if (string-suffix? ".scm" path)
+        (let ((mod (path->module path)))
+          (if mod
+              (append (module->tests mod) result)
+              result))
+        result))
+  (define (down _path _stat result)
+    result)
+  (define (up _path _stat result)
+    result)
+  (define (skip path _stat result)
+    (format (current-error-port) "skipping ~a" path)
+    result)
+  (define (error _path _stat _errno result)
+    result)
+  (file-system-fold enter? leaf down up skip error '() directory))
+
+(define (format-failure failure)
+  "Print FAILURE to stderr in a human readable format."
+  (let ((exn (caddr failure)))
+    (newline (current-error-port))
+    (format (current-error-port)
+            "test failed: ~a~%  "
+            (cadr failure))
+    (apply format
+           (cons*
+            (current-error-port)
+            (exception-message exn)
+            (exception-irritants exn)))
+    (newline (current-error-port))))
+
+(define (run-tests directory)
+  "Run all the tests in DIRECTORY, searching recursively through the file
+tree. Failures are formatted to stderr; '.' is printed to stdout for each
+success. Returns the number of tests that failed."
+  (let ((results
+         (map
+          (lambda (test)
+            (let ((result (run-test test)))
+              (if (failure? result)
+                  (format-failure result)
+                  (display "."))
+              result))
+          (find-tests directory))))
+    (newline)
+    (length (filter failure? results))))
+
+(define* (main #:optional (args (command-line)))
+  (exit (= 0 (run-tests "tests"))))
+
+(main)
