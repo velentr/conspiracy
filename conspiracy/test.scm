@@ -5,6 +5,7 @@
 (define-module (conspiracy test)
   #:use-module (srfi srfi-9)
   #:export (assert
+            assert-error
             define-test
             failure?
             run-test
@@ -46,6 +47,14 @@ if it fails."
   "Raise an error if EXPR is #f."
   (if (not expr)
       (error "assertion failed" (quote expr))))
+
+(define-syntax-rule (assert-error expr)
+  "Check EXPR for failure by raising an error if it completes successfully."
+  (if (not (with-exception-handler
+            (lambda (exn) #t)
+            (lambda () expr #f)
+            #:unwind? #t))
+      (error "error was not thrown" (quote expr))))
 
 (define (failure? test-result)
   "Is TEST-RESULT a test failure?"
