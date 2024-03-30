@@ -22,6 +22,15 @@
   "Output from 'echo' is captured."
   (assert (equal? "foo bar\n" (check-output* "echo" "foo" "bar"))))
 
+(define-test check-subprocess-echo-n
+  "At most N bytes from 'echo' are captured."
+  (assert
+   (equal? "fo"
+           (check-output '("echo" "foo" "bar") #:stdout '(capture 2))))
+  (assert
+   (equal? "foobar\n"
+           (check-output '("echo" "foobar") #:stdout '(capture 1024)))))
+
 (define-test check-subprocess-environment
   "Subprocess is executed with a clean environment."
   (assert
