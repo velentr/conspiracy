@@ -5,6 +5,7 @@
 (define-module (conspiracy subprocess)
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-9)
+  #:use-module (srfi srfi-26)
   #:export (call
             call*
             check-call
@@ -46,13 +47,26 @@ ENVIRON."
        (format #f "~a=~a" (car var) (cdr var)))))
    env-vars))
 
+(define (parse-capture maybe-capture)
+  "Parse MAYBE-CAPTURE into #T if all of the output should be captured, an
+integer N to capture N bytes of output, or #F to not capture output."
+  (cond
+   ((eq? maybe-capture 'capture)
+    #t)
+   ((and (pair? maybe-capture)
+         (eq? (car maybe-capture) 'capture)
+         (integer? (cadr maybe-capture)))
+    (cadr maybe-capture))
+   (#t #f)))
+
 (define* (run args #:key (check #f) (stdout #f) (environment (environ)))
   "Run the command given by ARGS in another process, wait for it to complete,
 then return a <COMPLETED-PROCESS> representing the result of its execution. If
 STDOUT is 'CAPTURE, capture the process's stdout to a string. Run the child
 process with environment variables given by ENVIRONMENT."
   (let* ((environment (normalize-environment environment))
-         (stdout/r+w (if (eq? stdout 'capture)
+         (capture (parse-capture stdout))
+         (stdout/r+w (if capture
                          (pipe)
                          (cons #f #f)))
          (stdout/r (car stdout/r+w))
@@ -64,7 +78,9 @@ process with environment variables given by ENVIRONMENT."
                #:environment environment))
          (_ (if stdout/w
                 (close-port stdout/w)))
-         (stdout (and stdout/r (get-string-all stdout/r)))
+         (stdout (and stdout/r ((if (integer? capture)
+                                    (cut get-string-n <> capture)
+                                    get-string-all) stdout/r)))
          (_ (if stdout/r
                 (close-port stdout/r)))
          (returncode (cdr (waitpid pid))))
