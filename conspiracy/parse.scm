@@ -4,7 +4,8 @@
 
 (define-module (conspiracy parse)
   #:use-module (srfi srfi-41)
-  #:export (port->syntax-stream
+  #:export (file->syntax-stream
+            port->syntax-stream
             string->syntax-stream
             syntax->children))
 
@@ -17,15 +18,22 @@ children. Otherwise, return an empty list."
     (_
      '())))
 
-(define (port->syntax-stream port)
+(define* (port->syntax-stream port #:key close?)
   "Return a stream of syntax objects read from PORT."
   (stream-let
    recur ()
    (let ((x (read-syntax port)))
      (if (eof-object? x)
-         stream-null
+         (begin
+           (if close?
+               (close-port port))
+           stream-null)
          (stream-cons x (recur))))))
 
 (define (string->syntax-stream string)
   "Return a stream of syntax objects parsed from STRING."
   (call-with-input-string string port->syntax-stream))
+
+(define (file->syntax-stream file-path)
+  "Return a stream of syntax objects parsed from the file at FILE-PATH."
+  (port->syntax-stream (open-input-file file-path) #:close? #t))
