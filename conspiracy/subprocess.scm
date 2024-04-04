@@ -84,7 +84,7 @@ process with environment variables given by ENVIRONMENT."
          (_ (if stdout/r
                 (close-port stdout/r)))
          (returncode (cdr (waitpid pid))))
-    (if (or (not check) (= 0 returncode))
+    (if (or (not check) (zero? returncode))
         (completed-process*
          #:args args
          #:returncode returncode

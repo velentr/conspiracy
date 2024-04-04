@@ -16,7 +16,7 @@
 
 (define-test nocheck-subprocess-false
   "Calling 'false' without checking completes successfully."
-  (assert (not (= 0 (call* "false")))))
+  (assert (not (zero? (call* "false")))))
 
 (define-test check-subprocess-echo
   "Output from 'echo' is captured."
