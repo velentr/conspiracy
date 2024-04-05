@@ -31,21 +31,21 @@
 (define (validate-email email)
   "Determine whether EMAIL is a valid email address."
   ;; TODO: actually implement this
-  (if (not (string? email))
-      (error "email is not valid" email)))
+  (unless (string? email)
+    (error "email is not valid" email)))
 
 (define (validate-ssh-key key)
   "Determine whether KEY is a valid SSH public key."
   ;; TODO: actually implement this
-  (if (not (string? key))
-      (error "SSH key is not valid" key)))
+  (unless (string? key)
+    (error "SSH key is not valid" key)))
 
 (define* (profile #:key (emails '()) (keys '()) (repositories '()))
   "Create an identity for a profile with the specified EMAILS and public KEYS."
   (for-each validate-email emails)
-  (if (not (and (list? keys)
-                (> (length keys) 0)))
-      (error "at least one SSH key is required"))
+  (unless (and (list? keys)
+               (positive? (length keys)))
+    (error "at least one SSH key is required"))
   (for-each validate-ssh-key keys)
   (make-profile emails keys repositories))
 
@@ -65,8 +65,8 @@
 
 (define (validate-repository-name name)
   "Determine whether NAME is a valid name for a repository."
-  (if (not (regexp-exec (force %repository-name-regex) name))
-      (error "repository name is invalid" name)))
+  (unless (regexp-exec (force %repository-name-regex) name)
+    (error "repository name is invalid" name)))
 
 (define* (repository name #:key (ro '()) (rw '()))
   "Create a repository NAME with readonly access granted to RO and read/write
