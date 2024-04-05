@@ -1,0 +1,55 @@
+#!/usr/bin/env guile
+!#
+
+;;; SPDX-FileCopyrightText: 2024 Brian Kubisiak <brian@kubisiak.com>
+;;;
+;;; SPDX-License-Identifier: GPL-3.0-only
+
+(use-modules (conspiracy lint)
+             (ice-9 ftw)
+             (srfi srfi-41))
+
+(define (find-scheme-files root)
+  "Find all the scheme files in the file-system tree ROOT."
+  (define (enter? _path _stat _result)
+    #t)
+  (define (leaf path _stat result)
+    (if (string-suffix? ".scm" path)
+        (cons path result)
+        result))
+  (define (down _path _stat result)
+    result)
+  (define (up _path _stat result)
+    result)
+  (define (skip path _stat result)
+    (format (current-error-port) "skipping ~a" path)
+    result)
+  (define (error _path _stat _errno result)
+    result)
+  (file-system-fold enter? leaf down up skip error '() root))
+
+(define (lint-all-files root)
+  "Lint all scheme files reachable from ROOT, printing out each lint
+failure. Returns the total number of lint failures encountered."
+  (let ((lint-failures
+         (apply
+          stream-append
+          (map
+           lint-file
+           (find-scheme-files root)))))
+    (stream-fold
+     (lambda (so-far lint-failure)
+       (display-lint-failure lint-failure (current-error-port))
+       (+ 1 so-far))
+     0
+     lint-failures)))
+
+(define* (main #:optional (args (command-line)))
+  (let ((args (cdr args)))
+    (exit
+     (zero? (lint-all-files
+             (if (nil? args)
+                 "."
+                 (car args)))))))
+
+(main)
