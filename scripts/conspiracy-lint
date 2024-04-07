@@ -32,11 +32,10 @@
   "Lint all scheme files reachable from ROOT, printing out each lint
 failure. Returns the total number of lint failures encountered."
   (let ((lint-failures
-         (apply
-          stream-append
-          (map
+         (stream-concat
+          (stream-map
            lint-file
-           (find-scheme-files root)))))
+           (list->stream (find-scheme-files root))))))
     (stream-fold
      (lambda (so-far lint-failure)
        (display-lint-failure lint-failure (current-error-port))
