@@ -76,13 +76,14 @@ process with environment variables given by ENVIRONMENT."
                args
                #:output (or stdout/w (current-output-port))
                #:environment environment))
-         (_ (if stdout/w
-                (close-port stdout/w)))
-         (stdout (and stdout/r ((if (integer? capture)
-                                    (cut get-string-n <> capture)
-                                    get-string-all) stdout/r)))
-         (_ (if stdout/r
-                (close-port stdout/r)))
+         (_ (when stdout/w
+              (close-port stdout/w)))
+         (stdout (when stdout/r
+                   ((if (integer? capture)
+                        (cut get-string-n <> capture)
+                        get-string-all) stdout/r)))
+         (_ (when stdout/r
+              (close-port stdout/r)))
          (returncode (cdr (waitpid pid))))
     (if (or (not check) (zero? returncode))
         (completed-process*
