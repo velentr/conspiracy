@@ -45,3 +45,24 @@
      (assert (eq? x 'x-value))
      (assert (eq? y 'y-value))
      (assert (eq? z 'z-value)))))
+
+(define-test test-tail-var
+  "We can bind to a tail variable."
+  (let ((substitution (unify `(foo ,(var* x)) '(foo bar baz))))
+    (assert substitution)
+    (with-substitution-binding-values
+     substitution (x)
+     (assert (equal? x '(bar baz))))))
+
+(define-test test-tail-var-with-var
+  "We can bind a tail variable with another variable."
+  (let ((substitution (unify `(foo ,(var x) ,(var* x))
+                             '(foo (bar baz) bar baz))))
+    (assert substitution)
+    (with-substitution-binding-values
+     substitution (x)
+     (assert (equal? x '(bar baz))))))
+
+(define-test test-tail-vars-in-var-namespace
+  "Tail variables share the same namespace as variables."
+  (assert (not (unify `(,(var x) ,(var* x)) '(foo bar)))))
