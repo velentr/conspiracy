@@ -11,6 +11,7 @@
             substitution-empty?
             unify
             var
+            var*
             with-substitution-binding-values))
 
 (define empty-substitution '())
@@ -60,6 +61,28 @@ the SUBSTITUTION; run EXPR ... in this scope."
 (define-syntax-rule (var name)
   "Make a new variable with the given NAME."
   (make-var (quote name)))
+
+;; Tail variables are similar to variables but they bind to the tail of a list
+;; rather than an individual term. Tail variables use the same namespace as
+;; normal variables.
+(define-immutable-record-type <var*>
+  (make-var* name)
+  inner-var*?
+  (name var*->name))
+
+(define-syntax-rule (var* name)
+  "Make a new tail variable with the given NAME."
+  (make-var* (quote name)))
+
+(define (var*? term)
+  "Check if TERM is a tail var i.e. a list with a single VAR* element."
+  (and (pair? term)
+       (inner-var*? (car term))
+       (nil? (cdr term))))
+
+(define (var*->var v)
+  "Transform V from a tail var to a var for binding."
+  (make-var (var*->name (car v))))
 
 (define (occurs? exp var substitution)
   "Check if EXP contains VAR inside SUBSTITUTION."
@@ -116,8 +139,12 @@ extended substitution or #F on failure."
     substitution)
    ((var? term-0)
     (check-and-extend-substitution term-0 term-1 substitution))
+   ((var*? term-0)
+    (check-and-extend-substitution (var*->var term-0) term-1 substitution))
    ((var? term-1)
     (check-and-extend-substitution term-1 term-0 substitution))
+   ((var*? term-1)
+    (check-and-extend-substitution (var*->var term-1) term-0 substitution))
    ((and (pair? term-0) (pair? term-1))
     (let ((sub-unification (unify (car term-0) (car term-1) substitution)))
       (if sub-unification
