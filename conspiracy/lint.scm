@@ -15,6 +15,7 @@
             %compare-with-zero-should-be-positive
             %compare-with-zero-should-be-zero
             %if-not-should-be-unless
+            %too-many-function-arguments
             check-syntax-for-all-patterns
             display-lint-failure
             lint-file

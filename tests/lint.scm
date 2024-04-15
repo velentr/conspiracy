@@ -43,3 +43,8 @@
                %compare-with-zero-should-be-zero)
   (assert-lint (lint-string "(= 0 1)")
                %compare-with-zero-should-be-zero))
+
+(define-test test-too-many-function-arguments
+  "Linting suggests using kw args."
+  (assert-lint (lint-string "(define (foo a b c d e f) foobar)")
+               %too-many-function-arguments))
