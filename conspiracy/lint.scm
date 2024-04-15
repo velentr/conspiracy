@@ -31,7 +31,7 @@
   ;; String describing why this lint is important
   (justification lint->justification))
 
-(define* (lint* justification . patterns)
+(define* (lint* justification #:key (patterns '()))
   "Create a new line with JUSTIFICATION; the lint will match any of PATTERNS."
   (make-lint patterns justification))
 
@@ -111,36 +111,41 @@ lint failures for the syntax."
   (lint*
    "Use (UNLESS cond ...) instead of (IF (NOT cond) ...) when the else clause
 doesn't matter."
-   `(if (not ,(var cond)) ,(var result))))
+   #:patterns
+   `((if (not ,(var cond)) ,(var result)))))
 
 (define %compare-with-zero-should-be-negative
   (lint*
    "Use (NEGATIVE? ...) instead of comparing with 0."
-   `(> 0 ,(var exp))
-   `(< ,(var exp) 0)))
+   #:patterns
+   `((> 0 ,(var exp))
+     (< ,(var exp) 0))))
 
 (define %compare-with-zero-should-be-positive
   (lint*
    "Use (POSITIVE? ...) instead of comparing with 0."
-   `(< 0 ,(var exp))
-   `(> ,(var exp) 0)))
+   #:patterns
+   `((< 0 ,(var exp))
+     (> ,(var exp) 0))))
 
 (define %compare-with-zero-should-be-zero
   (lint*
    "Use (ZERO? ...) instead of comparing with 0."
-   `(= 0 ,(var exp))
-   `(= ,(var exp) 0)))
+   #:patterns
+   `((= 0 ,(var exp))
+     (= ,(var exp) 0))))
 
 (define %too-many-function-arguments
   (lint*
    "Functions should take fewer than 6 arguments. Consider using keyword
 arguments instead."
-   `(define (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
-             ,(var arg4) ,(var arg5) ,(var* args))
-      ,(var* stmts))
-   `(define-public (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
-                    ,(var arg4) ,(var arg5) ,(var* args))
-     ,(var* stmts))))
+   #:patterns
+   `((define (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
+              ,(var arg4) ,(var arg5) ,(var* args))
+       ,(var* stmts))
+     (define-public (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
+                     ,(var arg4) ,(var arg5) ,(var* args))
+       ,(var* stmts)))))
 
 (define (make-pattern-list lints)
   "Given a list of LINTS, make a list of (pattern . lint) pairs joining each
