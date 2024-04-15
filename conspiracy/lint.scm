@@ -130,6 +130,17 @@ doesn't matter."
    `(= 0 ,(var exp))
    `(= ,(var exp) 0)))
 
+(define %too-many-function-arguments
+  (lint*
+   "Functions should take fewer than 6 arguments. Consider using keyword
+arguments instead."
+   `(define (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
+             ,(var arg4) ,(var arg5) ,(var* args))
+      ,(var* stmts))
+   `(define-public (,(var func) ,(var arg0) ,(var arg1) ,(var arg2) ,(var arg3)
+                    ,(var arg4) ,(var arg5) ,(var* args))
+     ,(var* stmts))))
+
 (define (make-pattern-list lints)
   "Given a list of LINTS, make a list of (pattern . lint) pairs joining each
 pattern with the lint containing it."
@@ -148,4 +159,5 @@ pattern with the lint containing it."
     %compare-with-zero-should-be-negative
     %compare-with-zero-should-be-positive
     %compare-with-zero-should-be-zero
-    %if-not-should-be-unless)))
+    %if-not-should-be-unless
+    %too-many-function-arguments)))
