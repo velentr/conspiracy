@@ -24,16 +24,19 @@
             lint-failure->lint))
 
 (define-immutable-record-type <lint>
-  (make-lint patterns justification)
+  (make-lint patterns justification filter)
   lint?
   ;; List of patterns for matching this lint
   (patterns lint->patterns)
   ;; String describing why this lint is important
-  (justification lint->justification))
+  (justification lint->justification)
+  ;; Guard expression for filtering  matches
+  (filter lint->filter))
 
-(define* (lint* justification #:key (patterns '()))
-  "Create a new line with JUSTIFICATION; the lint will match any of PATTERNS."
-  (make-lint patterns justification))
+(define* (lint* justification #:key (patterns '()) (filter (lambda (_) #t)))
+  "Create a new line with JUSTIFICATION; the lint will match any of PATTERNS if
+FILTER returns #T."
+  (make-lint patterns justification filter))
 
 (define-immutable-record-type <lint-failure>
   (make-lint-failure syntax-object substitution lint)
@@ -69,12 +72,13 @@ pairs."
   (let ((top-matches
          (filter-map
           (lambda (pattern)
-            (let ((substitution (unify (syntax->datum x) (car pattern))))
-              (if substitution
+            (let ((substitution (unify (syntax->datum x) (car pattern)))
+                  (lint-object (cdr pattern)))
+              (if (and substitution ((lint->filter lint-object) substitution))
                   (lint-failure*
                    #:syntax-object x
                    #:substitution substitution
-                   #:lint (cdr pattern))
+                   #:lint lint-object)
                   #f)))
           patterns))
         (child-matches
