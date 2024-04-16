@@ -7,6 +7,7 @@
   #:use-module (srfi srfi-9 gnu)
   #:export (binding->name
             binding->value
+            lambda-with-bindings
             substitution->binding
             substitution-empty?
             unify
@@ -52,6 +53,13 @@ the SUBSTITUTION; run EXPR ... in this scope."
                 #f)))
         (quote (binding-name ...))))
     expr ...))
+
+(define-syntax-rule (lambda-with-bindings (binding-name ...) expr ...)
+  "Create a lambda that takes a substitution and runs EXPR ... with bindings
+given by BINDING-NAME ... in scope."
+  (lambda (substitution)
+    (with-substitution-binding-values
+     substitution (binding-name ...) expr ...)))
 
 (define-immutable-record-type <var>
   (make-var name)

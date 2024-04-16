@@ -119,11 +119,9 @@ matter."
    #:patterns
    `((if ,(var cond) ,(var result)))
    #:filter
-   (lambda (substitution)
-     (with-substitution-binding-values
-      substitution (cond)
-      (or (not (pair? cond))
-          (not (eq? (car cond) 'not)))))))
+   (lambda-with-bindings (cond)
+     (or (not (pair? cond))
+         (not (eq? (car cond) 'not))))))
 
 (define %if-not-should-be-unless
   (lint*
