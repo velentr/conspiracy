@@ -25,8 +25,8 @@ children. Otherwise, return an empty list."
    (let ((x (read-syntax port)))
      (if (eof-object? x)
          (begin
-           (if close?
-               (close-port port))
+           (when close?
+             (close-port port))
            stream-null)
          (stream-cons x (recur))))))
 
