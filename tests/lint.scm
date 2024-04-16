@@ -24,6 +24,13 @@
     (assert (= 1 (length all-lints)))
     (assert (eq? lint (lint-failure->lint (car all-lints))))))
 
+(define-test test-if-lint
+  "Linting suggests (WHEN cond ...) instead of (IF cond ...)."
+  (assert-lint (lint-string "(if cond exp)")
+               %if-should-be-when)
+  (assert-lint (lint-string "(if (and cond0 cond1) exp)")
+               %if-should-be-when))
+
 (define-test test-if-not-lint
   "Linting suggests (UNLESS cond ...) instead of (IF (NOT cond) ...)."
   (assert-lint (lint-string "(if (not cond) exp)")
