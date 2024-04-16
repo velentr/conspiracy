@@ -14,6 +14,7 @@
             %compare-with-zero-should-be-negative
             %compare-with-zero-should-be-positive
             %compare-with-zero-should-be-zero
+            %if-should-be-when
             %if-not-should-be-unless
             %too-many-function-arguments
             check-syntax-for-all-patterns
@@ -111,6 +112,19 @@ the syntax."
 lint failures for the syntax."
   (lint-syntax-objects (file->syntax-stream file-path)))
 
+(define %if-should-be-when
+  (lint*
+   "Use (WHEN cond ...) instead of (IF cond ...) when the else clause doesn't
+matter."
+   #:patterns
+   `((if ,(var cond) ,(var result)))
+   #:filter
+   (lambda (substitution)
+     (with-substitution-binding-values
+      substitution (cond)
+      (or (not (pair? cond))
+          (not (eq? (car cond) 'not)))))))
+
 (define %if-not-should-be-unless
   (lint*
    "Use (UNLESS cond ...) instead of (IF (NOT cond) ...) when the else clause
@@ -170,4 +184,5 @@ pattern with the lint containing it."
     %compare-with-zero-should-be-positive
     %compare-with-zero-should-be-zero
     %if-not-should-be-unless
+    %if-should-be-when
     %too-many-function-arguments)))
