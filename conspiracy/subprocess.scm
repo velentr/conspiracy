@@ -57,7 +57,7 @@ integer N to capture N bytes of output, or #F to not capture output."
          (eq? (car maybe-capture) 'capture)
          (integer? (cadr maybe-capture)))
     (cadr maybe-capture))
-   (#t #f)))
+   (else #f)))
 
 (define* (run args #:key (check #f) (stdout #f) (environment (environ)))
   "Run the command given by ARGS in another process, wait for it to complete,
