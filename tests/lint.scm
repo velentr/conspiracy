@@ -55,3 +55,11 @@
   "Linting suggests using kw args."
   (assert-lint (lint-string "(define (foo a b c d e f) foobar)")
                %too-many-function-arguments))
+
+(define-test test-dangling-true
+  "Linting suggests replacing #T with ELSE in a COND."
+  ;; ensure that these don't cause errors
+  (assert (stream-null? (lint-string "(cond)")))
+  (assert (stream-null? (lint-string "(cond #t)")))
+  (assert-lint (lint-string "(cond (foo bar) (#t foobar))")
+               %dangling-true-should-be-else))
