@@ -14,6 +14,7 @@
             %compare-with-zero-should-be-negative
             %compare-with-zero-should-be-positive
             %compare-with-zero-should-be-zero
+            %dangling-true-should-be-else
             %if-should-be-when
             %if-not-should-be-unless
             %too-many-function-arguments
@@ -163,6 +164,21 @@ arguments instead."
                      ,(var arg4) ,(var arg5) ,(var* args))
        ,(var* stmts)))))
 
+(define %dangling-true-should-be-else
+  (lint*
+   "The last condition in a COND block should be ELSE, not #T."
+   #:patterns
+   `((cond ,(var* statements)))
+   #:filter
+   (lambda-with-bindings (statements)
+     (let ((last-cond (last-pair statements)))
+       (and (pair? last-cond)
+            (not (nil? last-cond))
+            (pair? (car last-cond))
+            (not (nil? (car last-cond)))
+            (eq? #t
+                 (caar last-cond)))))))
+
 (define (make-pattern-list lints)
   "Given a list of LINTS, make a list of (pattern . lint) pairs joining each
 pattern with the lint containing it."
@@ -181,6 +197,7 @@ pattern with the lint containing it."
     %compare-with-zero-should-be-negative
     %compare-with-zero-should-be-positive
     %compare-with-zero-should-be-zero
+    %dangling-true-should-be-else
     %if-not-should-be-unless
     %if-should-be-when
     %too-many-function-arguments)))
